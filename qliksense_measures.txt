@@ -1,0 +1,232 @@
+QLIK_SENSE_NOTES_FULL.txt
+Project: Genesys Analytics ETL
+
+
+
+1. CONTEXT
+
+
+This Qlik Sense dashboard is built on top of a near real-time ETL pipeline
+ingesting Genesys Cloud data.
+
+The dashboard is intentionally simple.
+The main value of the project lies in the ingestion strategy,
+data modeling, and transformation logic.
+
+Operational and customer-related data is partially hidden
+to respect GDPR and data privacy constraints.
+
+
+
+2. DATA ASSUMPTIONS
+
+
+Fact table: fact_calls
+Bridge table: fact_call_skills
+
+Key fields:
+Interaction_Id
+conversation_start_ts
+conversation_end_ts
+call_duration_ms
+call_answered_flag
+User_Id
+Queue_Id
+Division_Id
+Skill_Id
+WrapUpCode_Id
+
+Calendar linked via CalendarDate
+
+
+
+3. GLOBAL FILTERS (USED ACROSS DASHBOARD)
+
+
+CalendarDate
+Year
+Month
+Week
+Date
+Hour
+
+User_Name
+Queue_Name
+Division_Name
+Skill_Name
+WrapUp_Label
+
+call_answered_flag (Answered / Abandoned)
+
+
+
+4. TIME AND DURATION HANDLING
+
+
+Genesys APIs often return durations in milliseconds.
+
+Durations are stored as numeric values in the warehouse.
+Formatting to hh:mm:ss is handled in Qlik.
+
+Conversion rules:
+- ms to seconds: /1000
+- ms to Qlik time value: /(1000*60*60*24)
+
+Preferred display method:
+Interval(duration_ms / 1000, 'hh:mm:ss')
+
+
+
+5. CORE KPI MEASURES
+
+
+Total Calls
+Count(DISTINCT Interaction_Id)
+
+Answered Calls
+Count({<call_answered_flag{1}>} DISTINCT Interaction_Id)
+
+Abandoned Calls
+Count({<call_answered_flag{0}>} DISTINCT Interaction_Id)
+
+Answer Rate
+Count({<call_answered_flag{1}>} DISTINCT Interaction_Id)
+/
+Count(DISTINCT Interaction_Id)
+
+
+
+6. DURATION METRICS
+
+
+Average Call Duration (hh:mm:ss)
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+Max Call Duration (hh:mm:ss)
+Interval( Max(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+Average Call Duration (seconds)
+Avg(call_duration_ms) / 1000
+
+
+
+7. TIME-BASED ANALYSIS
+
+
+Calls by Day
+Count(DISTINCT Interaction_Id)
+
+Calls by Hour
+Count(DISTINCT Interaction_Id)
+
+Average Duration by Hour
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+
+
+8. AGENT PERFORMANCE
+
+
+Calls per Agent
+Count(DISTINCT Interaction_Id)
+
+Answered Calls per Agent
+Count({<call_answered_flag{1}>} DISTINCT Interaction_Id)
+
+Agent Answer Rate
+Count({<call_answered_flag{1}>} DISTINCT Interaction_Id)
+/
+Count(DISTINCT Interaction_Id)
+
+Average Handling Time per Agent
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+
+
+9. QUEUE PERFORMANCE
+
+
+Calls per Queue
+Count(DISTINCT Interaction_Id)
+
+Queue Answer Rate
+Count({<call_answered_flag{1}>} DISTINCT Interaction_Id)
+/
+Count(DISTINCT Interaction_Id)
+
+Average Duration per Queue
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+
+
+10. DIVISION ANALYSIS
+
+
+Calls per Division
+Count(DISTINCT Interaction_Id)
+
+Average Duration per Division
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+
+
+11. SKILL ANALYSIS
+
+
+Calls per Skill
+Count(DISTINCT Interaction_Id)
+
+Average Duration per Skill
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+
+
+12. WRAP-UP / QUALIFICATION ANALYSIS
+
+
+Calls per Wrap-up Code
+Count(DISTINCT Interaction_Id)
+
+Average Duration per Wrap-up Code
+Interval( Avg(call_duration_ms) / 1000, 'hh:mm:ss' )
+
+
+
+13. DATA QUALITY / SANITY CHECKS
+
+
+Incomplete Records
+Sum(incomplete_record_flag)
+
+Valid Duration Rate
+Sum(valid_duration_flag) / Count(Interaction_Id)
+
+
+
+14. DASHBOARD STRUCTURE (LOGICAL)
+
+
+Top section:
+- Total Calls
+- Answer Rate
+- Average Call Duration
+
+Middle section:
+- Calls by Day
+- Calls by Hour
+- Answer Rate by Queue
+
+Bottom section:
+- Agent Performance
+- Skill Distribution
+- Wrap-up Analysis
+
+All charts respond to global filters.
+
+
+
+15. INTERVIEW ONE-LINER
+
+
+“Durations are stored in milliseconds in the warehouse
+and converted to hh:mm:ss at the BI layer to keep the model numeric and flexible.”
